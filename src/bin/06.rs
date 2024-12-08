@@ -1,19 +1,11 @@
+use std::collections::HashSet;
+
 advent_of_code::solution!(6);
 
 #[derive(Debug)]
 enum Pieces {
-    Space(bool),
-    Obstacle(bool),
-}
-
-impl Pieces {
-    fn visit(&mut self) {
-        match self {
-            Pieces::Space(ref mut visited) | Pieces::Obstacle(ref mut visited) => {
-                *visited = true;
-            }
-        }
-    }
+    Space,
+    Obstacle,
 }
 
 fn get_elem<T>(vector: &Vec<T>, index: isize) -> Option<&T> {
@@ -35,11 +27,12 @@ enum Direction {
 struct Guard {
     position: (isize, isize),
     direction: Direction,
+    visited: HashSet<(usize, usize)>,
 }
 
 impl Guard {
     fn next_move(&mut self, map: &mut Vec<Vec<Pieces>>) {
-        if let Pieces::Obstacle(_) = map[self.position.0 as usize][self.position.1 as usize] {
+        if let Pieces::Obstacle = map[self.position.0 as usize][self.position.1 as usize] {
             panic!("illegal position");
         }
 
@@ -48,16 +41,9 @@ impl Guard {
             self.turn_ninety_degrees();
         }
         self.position = (pos.0, pos.1);
-        // Use custom `get_elem` function while avoiding conflicting borrows
-        let row = get_elem(map, self.position.0);
-        if let Some(row) = row {
-            if let Some(val) = get_elem(row, self.position.1) {
-                // Temporarily release the mutable borrow of `map` for safe access
-                let val_mut = val as *const Pieces as *mut Pieces; // Cast to raw pointer
-                unsafe {
-                    (*val_mut).visit();
-                } // Access mutable reference using raw pointer
-            }
+        if self.inbounds(map) {
+            self.visited
+                .insert((self.position.0 as usize, self.position.1 as usize));
         }
     }
 
@@ -83,7 +69,7 @@ impl Guard {
         } else {
             None
         } {
-            Some(Pieces::Obstacle(_)) => false,
+            Some(Pieces::Obstacle) => false,
             _ => true,
         }
     }
@@ -107,11 +93,12 @@ pub fn part_one(input: &str) -> Option<u32> {
                         guard = Some(Guard {
                             position: (r as isize, c as isize),
                             direction: Direction::North,
+                            visited: HashSet::new(),
                         });
-                        Pieces::Space(true)
+                        Pieces::Space
                     }
-                    '.' => Pieces::Space(false),
-                    '#' => Pieces::Obstacle(false),
+                    '.' => Pieces::Space,
+                    '#' => Pieces::Obstacle,
                     _ => panic!("unknown object"),
                 })
                 .collect::<Vec<_>>()
@@ -124,16 +111,7 @@ pub fn part_one(input: &str) -> Option<u32> {
         guard.next_move(&mut map);
     }
 
-    map.iter()
-        .map(|row| {
-            row.iter()
-                .filter(|elem| match elem {
-                    Pieces::Space(visited) => *visited,
-                    Pieces::Obstacle(visited) => *visited,
-                })
-                .count() as u32
-        })
-        .reduce(|acc, v| acc + v)
+    Some(guard.visited.len() as u32)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
