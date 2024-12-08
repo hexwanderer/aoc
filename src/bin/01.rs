@@ -9,9 +9,9 @@ pub fn part_one(input: &str) -> Option<u32> {
     // Process each line into two vectors of integers
     let (mut left, mut right): (Vec<isize>, Vec<isize>) = lines
         .map(|line| {
-            let mut numbers_as_string = line.split(" ");
-            let first = numbers_as_string.next().unwrap().parse::<isize>().unwrap();
-            let second = numbers_as_string.last().unwrap().parse::<isize>().unwrap();
+            let (left, right) = line.split_once("   ").unwrap();
+            let first = left.parse::<isize>().unwrap();
+            let second = right.parse::<isize>().unwrap();
             (first, second)
         })
         .unzip();
