@@ -4,11 +4,10 @@ advent_of_code::solution!(1);
 
 pub fn part_one(input: &str) -> Option<u32> {
     // Split the input into lines
-    let lines: Vec<&str> = input.lines().collect();
+    let lines = input.lines();
 
     // Process each line into two vectors of integers
     let (mut left, mut right): (Vec<isize>, Vec<isize>) = lines
-        .iter()
         .map(|line| {
             let mut numbers_as_string = line.split(" ");
             let first = numbers_as_string.next().unwrap().parse::<isize>().unwrap();
@@ -31,11 +30,10 @@ pub fn part_one(input: &str) -> Option<u32> {
 
 pub fn part_two(input: &str) -> Option<u32> {
     // Split the input into lines
-    let lines: Vec<&str> = input.lines().collect();
+    let lines = input.lines();
 
     // Process each line into two vectors of integers
     let (left, right): (Vec<isize>, Vec<isize>) = lines
-        .iter()
         .map(|line| {
             let mut numbers_as_string = line.split(" ");
             let first = numbers_as_string.next().unwrap().parse::<isize>().unwrap();
