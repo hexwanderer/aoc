@@ -2,18 +2,10 @@ use std::collections::HashSet;
 
 advent_of_code::solution!(6);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum Pieces {
     Space,
     Obstacle,
-}
-
-fn get_elem<T>(vector: &Vec<T>, index: isize) -> Option<&T> {
-    if index < 0 {
-        None
-    } else {
-        vector.get(index as usize)
-    }
 }
 
 #[derive(Debug)]
@@ -31,13 +23,13 @@ struct Guard {
 }
 
 impl Guard {
-    fn next_move(&mut self, map: &mut Vec<Vec<Pieces>>) {
+    fn next_move(&mut self, map: &mut Vec<Vec<Pieces>>, inbounds: &mut bool) {
         if let Pieces::Obstacle = map[self.position.0 as usize][self.position.1 as usize] {
             panic!("illegal position");
         }
 
         let mut pos: (isize, isize) = (0, 0);
-        while !self.can_move_ahead(map, &mut pos) {
+        while !self.can_move_ahead(map, &mut pos, inbounds) {
             self.turn_ninety_degrees();
         }
         self.position = (pos.0, pos.1);
@@ -56,7 +48,12 @@ impl Guard {
         };
     }
 
-    fn can_move_ahead(&self, map: &Vec<Vec<Pieces>>, next_pos: &mut (isize, isize)) -> bool {
+    fn can_move_ahead(
+        &self,
+        map: &Vec<Vec<Pieces>>,
+        next_pos: &mut (isize, isize),
+        inbounds: &mut bool,
+    ) -> bool {
         let next_position = match self.direction {
             Direction::North => (self.position.0 - 1, self.position.1),
             Direction::South => (self.position.0 + 1, self.position.1),
@@ -64,19 +61,22 @@ impl Guard {
             Direction::East => (self.position.0, self.position.1 + 1),
         };
         *next_pos = next_position;
-        match if let Some(row) = get_elem(map, next_position.0) {
-            get_elem(row, next_position.1)
+        let is_in = Guard::inbounds_for_position(map, next_position);
+        *inbounds = is_in;
+        if is_in {
+            Pieces::Obstacle != map[next_position.0 as usize][next_position.1 as usize]
         } else {
-            None
-        } {
-            Some(Pieces::Obstacle) => false,
-            _ => true,
+            true
         }
     }
 
     fn inbounds(&self, map: &Vec<Vec<Pieces>>) -> bool {
-        ((0 as isize)..(map.len() as isize)).contains(&self.position.0)
-            && ((0 as isize)..(map[0].len() as isize)).contains(&self.position.1)
+        Guard::inbounds_for_position(map, self.position)
+    }
+
+    fn inbounds_for_position(map: &Vec<Vec<Pieces>>, position: (isize, isize)) -> bool {
+        ((0 as isize)..(map.len() as isize)).contains(&position.0)
+            && ((0 as isize)..(map[0].len() as isize)).contains(&position.1)
     }
 }
 
@@ -106,9 +106,10 @@ pub fn part_one(input: &str) -> Option<u32> {
         .collect::<Vec<_>>();
 
     let mut guard = guard.unwrap();
+    let mut inbounds = true;
 
-    while guard.inbounds(&map) {
-        guard.next_move(&mut map);
+    while inbounds {
+        guard.next_move(&mut map, &mut inbounds);
     }
 
     Some(guard.visited.len() as u32)
