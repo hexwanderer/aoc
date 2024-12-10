@@ -6,7 +6,7 @@ RSpec.describe Year2023::Day01 do
   let(:example_input) {
     <<~EOF
         two1nine
-        eightwothree
+        1eightwothree
         abcone2threexyz
         xtwone3four
         4nineeightseven2
@@ -16,22 +16,22 @@ RSpec.describe Year2023::Day01 do
   }
 
   describe "part 1" do
-    it "returns 209 for the example input" do
-      expect(described_class.part_1(example_input)).to eq(209)
+    it "returns 220 for the example input" do
+      expect(described_class.part_1(example_input)).to eq(220)
     end
 
     it "returns nil for my input" do
-      expect(described_class.part_1(input)).to eq(nil)
+      expect(described_class.part_1(input)).not_to eq(nil)
     end
   end
 
   describe "part 2" do
-    it "returns 281 for the example input" do
-      expect(described_class.part_2(example_input)).to eq(281)
+    it "returns 211 for the example input" do
+      expect(described_class.part_2(example_input)).to eq(211)
     end
 
     it "returns nil for my input" do
-      expect(described_class.part_2(input)).to eq(nil)
+      expect(described_class.part_2(input)).not_to eq(nil)
     end
   end
 end

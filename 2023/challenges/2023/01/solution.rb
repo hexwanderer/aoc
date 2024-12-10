@@ -9,7 +9,7 @@ module Year2023
       data.each do |line|
         line = line.chomp
         pairs = []
-        line.each_char do |char|
+        line.each_char.with_index do |char, i|
           if char.match?(/\d/)
             pairs << char
           end
