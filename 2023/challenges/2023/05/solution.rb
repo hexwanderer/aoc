@@ -40,10 +40,18 @@ module Year2023
         if range1.begin <= range2.begin && range1.end >= range2.end
           :full
         elsif range1.begin <= range2.begin || range1.end >= range2.end
-          :partial[range1, range2]
+          :partial
         else
           :none
         end
+      end
+
+      def split_range(range1, range2)
+        larger_start = range1.begin > range2.begin ? range1.begin : range2.begin
+        smaller_end = range1.end < range2.end ? range1.end : range2.end
+        larger_end = range1.end > range2.end ? range1.end : range2.end
+
+        [larger_start..smaller_end, smaller_end..larger_end]
       end
 
       # Processes each line of the input file and stores the result in the dataset
@@ -71,8 +79,8 @@ module Year2023
             current_range = range
             return process_range(current_range, mode_maps, current_mode + 1)
           when :partial
-            range_1, range_2 = 0..0, 0..0
-            return [process_range(range_1, mode_maps, current_mode + 1), process_range(range_2, mode_maps, current_mode + 1)].min
+            ranges = split_range(current_range, range)
+            return ranges.map { |r| process_range(r, mode_maps, current_mode + 1) }.min
           when :none
             continue
           end
