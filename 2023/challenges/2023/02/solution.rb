@@ -11,8 +11,7 @@ module Year2023
     }
 
     def part_1
-      exceeds = 0
-      data.each do |line|
+      data.map do |line|
         game_id, pieces = parse_game(line)
 
         valid = true
@@ -22,26 +21,19 @@ module Year2023
             break
           end
         end
-        if valid
-          exceeds += game_id
-        end
-      end
-
-      exceeds
+        valid ? game_id : 0
+      end.sum
     end
 
     def part_2
-      exceeds = 0
-      data.each do |line|
+      data.map do |line|
         _, pieces = parse_game(line)
         minimum = 1
         pieces.each do |color, count|
           minimum *= count
         end
-        exceeds += minimum
-      end
-
-      exceeds
+        minimum
+      end.sum
     end
 
     private
