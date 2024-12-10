@@ -5,8 +5,7 @@ module Year2023
     # Call `data` to access either an array of the parsed data, or a single record for a 1-line input file
 
     def part_1
-      sums = 0
-      data.each do |line|
+      data.map do |line|
         line = line.chomp
         pairs = []
         line.each_char.with_index do |char, i|
@@ -18,10 +17,8 @@ module Year2023
         left = pairs.first
         right = pairs.last
 
-        combined = (left + right).to_i
-        sums += combined
-      end
-      sums
+        (left + right).to_i
+      end.sum
     end
 
     DIGIT_MAP = {
@@ -37,9 +34,8 @@ module Year2023
     }
 
     def part_2
-      sums = 0
       numeric_words = %w[one two three four five six seven eight nine]
-      data.each do |line|
+      data.map do |line|
         line = line.chomp
 
         pairs = []
@@ -57,10 +53,8 @@ module Year2023
         left = pairs.first
         right = pairs.last
 
-        combined = (left + right).to_i
-        sums += combined
-      end
-      sums
+        (left + right).to_i
+      end.sum
     end
 
     private
