@@ -23,9 +23,9 @@ RSpec.describe Year2023::Day03 do
       expect(described_class.part_1(example_input)).to eq(4361)
     end
 
-    # it "returns nil for my input" do
-    #   expect(described_class.part_1(input)).to eq(nil)
-    # end
+    it "returns nil for my input" do
+      expect(described_class.part_1(input)).not_to eq(nil)
+    end
   end
 
   describe "part 2" do
@@ -34,7 +34,7 @@ RSpec.describe Year2023::Day03 do
     end
 
     it "returns nil for my input" do
-      expect(described_class.part_2(input)).to eq(nil)
+      expect(described_class.part_2(input)).not_to eq(nil)
     end
   end
 end
