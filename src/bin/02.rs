@@ -28,13 +28,13 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     // Solve the problem
     let result = puzzle_lines
-        .map(|line| {
-            (solve_line(&line, &(0..line.len()).collect(), true)
-                || solve_line(&line, &(0..line.len()).collect(), false)) as u32
+        .filter(|line| {
+            solve_line(&line, &(0..line.len()).collect(), true)
+                || solve_line(&line, &(0..line.len()).collect(), false)
         })
-        .reduce(|acc, v| acc + v);
+        .count();
 
-    result
+    Some(result as u32)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -50,7 +50,7 @@ pub fn part_two(input: &str) -> Option<u32> {
 
     // Solve the problem
     let result = puzzle_lines
-        .map(|line| {
+        .filter(|line| {
             let indices = 0..line.len();
             let skips: Vec<Vec<usize>> = indices
                 .clone()
@@ -66,14 +66,14 @@ pub fn part_two(input: &str) -> Option<u32> {
                 .collect();
             for skip in skips {
                 if solve_line(&line, &skip, true) || solve_line(&line, &skip, false) {
-                    return 1;
+                    return true;
                 }
             }
-            0
+            false
         })
-        .reduce(|acc, v| acc + v);
+        .count();
 
-    result
+    Some(result as u32)
 }
 
 #[cfg(test)]
