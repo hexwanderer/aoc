@@ -8,64 +8,23 @@ enum Component {
     Free,
 }
 
-fn has_free_space(map: &Vec<Component>) -> Option<usize> {
-    let mut space_on_left = None;
-    for (i, component) in map.iter().enumerate() {
-        match component {
-            Component::File(_) => {
-                if space_on_left.is_some() {
-                    return space_on_left;
-                }
-            }
-            Component::Free => {
-                if space_on_left.is_none() {
-                    space_on_left = Some(i)
-                }
-            }
-        }
-    }
-    None
+#[derive(Debug, Clone)]
+struct FileMap {
+    raw: Vec<Component>,
+    id_locations: HashMap<u64, u64>,
+    id_sizes: HashMap<u64, u64>,
 }
 
-fn has_free_space_between(map: &Vec<Component>, target_id: u64, target_size: u64) -> Option<usize> {
-    let (mut space_pos, mut size) = (None, 0);
-    for (i, component) in map.iter().enumerate() {
-        match component {
-            Component::File(id) => {
-                if space_pos.is_some() {
-                    if size >= target_size {
-                        return space_pos;
-                    }
-                    space_pos = None;
-                    size = 0;
-                }
-
-                if target_id == *id {
-                    break;
-                }
-            }
-            Component::Free => {
-                if space_pos.is_some() {
-                    size += 1;
-                } else {
-                    (space_pos, size) = (Some(i), 1);
-                }
-            }
-        }
-    }
-    None
-}
-
-fn build_filemap(input: &str) -> (Vec<Component>, u64, HashMap<u64, u64>, HashMap<u64, u64>) {
-    let (mut is_file, mut last_id, mut last_pos, mut loc_map, mut size_map) = (
-        true,
-        0,
-        0,
-        HashMap::<u64, u64>::new(),
-        HashMap::<u64, u64>::new(),
-    );
-    (
-        input
+impl FileMap {
+    fn new(input: &str) -> Self {
+        let (mut is_file, mut last_id, mut last_pos, mut loc_map, mut size_map) = (
+            true,
+            0,
+            0,
+            HashMap::<u64, u64>::new(),
+            HashMap::<u64, u64>::new(),
+        );
+        let raw = input
             .chars()
             .into_iter()
             .filter_map(|c| {
@@ -87,53 +46,106 @@ fn build_filemap(input: &str) -> (Vec<Component>, u64, HashMap<u64, u64>, HashMa
                 }
             })
             .flatten()
-            .collect::<Vec<_>>(),
-        last_id,
-        loc_map,
-        size_map,
-    )
-}
+            .collect::<Vec<_>>();
+        Self {
+            raw,
+            id_locations: loc_map,
+            id_sizes: size_map,
+        }
+    }
 
-fn checksum(filemap: &Vec<Component>) -> Option<u64> {
-    filemap
-        .iter()
-        .enumerate()
-        .filter_map(|(pos, file)| match file {
-            Component::File(id) => Some(pos as u64 * id),
-            Component::Free => None,
-        })
-        .reduce(|acc, v| acc + v)
+    fn leftmost_free_space(&self) -> Option<usize> {
+        let mut space_on_left = None;
+        for (i, component) in self.raw.iter().enumerate() {
+            match component {
+                Component::File(_) => {
+                    if space_on_left.is_some() {
+                        return space_on_left;
+                    }
+                }
+                Component::Free => {
+                    if space_on_left.is_none() {
+                        space_on_left = Some(i)
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn defragment_full(&mut self) {
+        while let Some(loc) = self.leftmost_free_space() {
+            for i in (0..self.raw.len()).rev() {
+                if let Component::File(_) = self.raw[i] {
+                    self.raw.swap(loc, i);
+                    break;
+                }
+            }
+        }
+    }
+
+    fn leftmost_contiguous_free_space(&self, target_size: u64) -> Option<usize> {
+        let (mut space_pos, mut size) = (None, 0);
+        for (i, component) in self.raw.iter().enumerate() {
+            match component {
+                Component::File(_) => {
+                    if space_pos.is_some() {
+                        if size >= target_size {
+                            return space_pos;
+                        }
+                        space_pos = None;
+                        size = 0;
+                    }
+                }
+                Component::Free => {
+                    if space_pos.is_some() {
+                        size += 1;
+                    } else {
+                        (space_pos, size) = (Some(i), 1);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn defragment_files(&mut self) {
+        for id in (0..=*self.id_locations.keys().max().unwrap()).rev() {
+            let file_size = self.id_sizes[&id];
+            let file_loc = self.id_locations[&id] as usize;
+            if let Some(space_pos) = self.leftmost_contiguous_free_space(file_size) {
+                if space_pos < file_loc {
+                    for empty_index in 0..file_size as usize {
+                        self.raw
+                            .swap(space_pos + empty_index, file_loc + empty_index as usize);
+                    }
+                }
+            }
+        }
+    }
+
+    fn checksum(&self) -> Option<u64> {
+        self.raw
+            .iter()
+            .enumerate()
+            .filter_map(|(pos, file)| match file {
+                Component::File(id) => Some(pos as u64 * id),
+                Component::Free => None,
+            })
+            .reduce(|acc, v| acc + v)
+    }
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
-    let (mut filemap, _, _, _) = build_filemap(input);
-
-    while let Some(loc) = has_free_space(&filemap) {
-        for i in (0..filemap.len()).rev() {
-            if let Component::File(_) = filemap[i] {
-                filemap.swap(loc, i);
-                break;
-            }
-        }
-    }
-
-    checksum(&filemap)
+    let mut filemap = FileMap::new(input);
+    filemap.defragment_full();
+    filemap.checksum()
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    let (mut filemap, last_id, loc_map, size_map) = build_filemap(input);
-
-    for id in (0..last_id).rev() {
-        let file_size = size_map[&id];
-        let file_loc = loc_map[&id] as usize;
-        if let Some(space_pos) = has_free_space_between(&filemap, id, file_size) {
-            for empty_index in 0..file_size as usize {
-                filemap.swap(space_pos + empty_index, file_loc + empty_index as usize);
-            }
-        }
-    }
-
-    checksum(&filemap)
+    let mut filemap = FileMap::new(input);
+    filemap.defragment_files();
+    filemap.checksum()
 }
 
 #[cfg(test)]
