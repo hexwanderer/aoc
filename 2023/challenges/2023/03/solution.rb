@@ -5,7 +5,7 @@ module Year2023
     # Call `data` to access either an array of the parsed data, or a single record for a 1-line input file
 
     def part_1
-      numbers, max_row, max_col = build_schematic(data)
+      raw, numbers, max_row, max_col = data
 
       # any non-alpha, non-number, non-period characters are symbols
       valid_numbers = []
@@ -13,7 +13,7 @@ module Year2023
         adjacent(range[0], range[1], range[2], max_row, max_col).each do |coord|
           next if coord.nil?
           row, col = coord
-          if !data[row][col].match?(/\d/) && data[row][col] != "."
+          if !raw[row][col].match?(/\d/) && raw[row][col] != "."
             valid_numbers << number.to_i
             break
           end
@@ -24,14 +24,14 @@ module Year2023
     end
 
     def part_2
-      numbers, max_row, max_col = build_schematic(data)
+      raw, numbers, max_row, max_col = data
 
       gears = {}
       numbers.each do |range, number|
         adjacent(range[0], range[1], range[2], max_row, max_col).each do |coord|
           next if coord.nil?
           row, col = coord
-          next if data[row][col] != "*"
+          next if raw[row][col] != "*"
 
           gears[[row, col]] ||= []
           gears[[row, col]] << number.to_i
@@ -42,16 +42,16 @@ module Year2023
     end
 
     private
-      def build_schematic(input)
+      def process_dataset(set)
         numbers = {}
         is_number = false
         curr_number = ""
 
         # Get max row and column
-        max_row = data.length
-        max_col = data.first.length
+        max_row = set.length
+        max_col = set.first.length
 
-        data.each.with_index do |line, r|
+        set.each.with_index do |line, r|
           line.each_char.with_index do |char, c|
             if !is_number && char.match?(/\d/)
               is_number = true
@@ -71,7 +71,7 @@ module Year2023
             is_number = false
           end
         end
-        [numbers, max_row, max_col]
+        [set, numbers, max_row, max_col]
       end
 
       # Generate a list of all adjacent coordinates to a number,

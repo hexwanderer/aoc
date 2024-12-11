@@ -6,18 +6,9 @@ module Year2023
 
     def part_1
       data.map do |line|
-        line = line.chomp
-        pairs = []
-        line.each_char.with_index do |char, i|
-          if char.match?(/\d/)
-            pairs << char
-          end
-        end
-
-        left = pairs.first
-        right = pairs.last
-
-        (left + right).to_i
+        first_num = line.find { |item| item[:type] == :num }
+        last_num = line.reverse.find { |item| item[:type] == :num }
+        first_num[:value] * 10 + last_num[:value]
       end.sum
     end
 
@@ -34,38 +25,38 @@ module Year2023
     }
 
     def part_2
-      numeric_words = %w[one two three four five six seven eight nine]
       data.map do |line|
-        line = line.chomp
-
-        pairs = []
-        line.each_char.with_index do |char, i|
-          # Check if the character is a digit
-          if char.match?(/\d/)
-            pairs << char
-            # Check if the substring is a numeric word
-          elsif numeric_words.any? { |word| line[i..].start_with?(word) }
-            word = numeric_words.find { |w| line[i..].start_with?(w) }
-            pairs << DIGIT_MAP[word]
-          end
-        end
-
-        left = pairs.first
-        right = pairs.last
-
-        (left + right).to_i
+        first_num = line.first[:value]
+        last_num = line.last[:value]
+        first_num * 10 + last_num
       end.sum
     end
 
     private
-    # Processes each line of the input file and stores the result in the dataset
-    # def process_input(line)
-    #   line.map(&:to_i)
-    # end
+      # Processes the dataset as a whole
+      def process_dataset(set)
+        set.map do |line|
+          process_line(line)
+        end
+      end
 
-    # Processes the dataset as a whole
-    # def process_dataset(set)
-    #   set
-    # end
+      def process_line(line)
+        result = []
+        i = 0
+
+        while i < line.length
+          char = line[i]
+
+          if char.match?(/\d/) # Match digits
+            result << { type: :num, value: char.to_i }
+          elsif DIGIT_MAP.keys.any? { |word| line[i..].start_with?(word) }
+            word = DIGIT_MAP.keys.find { |w| line[i..].start_with?(w) }
+            result << { type: :word, value: DIGIT_MAP[word].to_i }
+          end
+          i += 1
+        end
+
+        result
+      end
   end
 end
