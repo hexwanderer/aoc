@@ -26,20 +26,18 @@ module Year2023
     def part_2
       lines = @input.lines.map(&:chomp)
       seeds, mode_maps = process_dataset(lines)
-      seeds.each_slice(2).map do |left, right|
-        (left...left+right).map do |seed|
-          puts "seed #{seed}"
-          result = process_seed(seed, mode_maps)
-          result
-        end.min
-      end.min
+      r = seeds.each_slice(2).map do |left, right|
+        process_range(left...left+right, mode_maps, 0)
+      end
+      puts "result: #{r}"
+      r.min
     end
 
     private
       def fully_encompass(range1, range2)
         if range1.begin <= range2.begin && range1.end >= range2.end
           :full
-        elsif range1.begin <= range2.begin || range1.end >= range2.end
+        elsif range1.end > range2.begin && range1.begin < range2.end
           :partial
         else
           :none
@@ -47,11 +45,20 @@ module Year2023
       end
 
       def split_range(range1, range2)
-        larger_start = range1.begin > range2.begin ? range1.begin : range2.begin
-        smaller_end = range1.end < range2.end ? range1.end : range2.end
-        larger_end = range1.end > range2.end ? range1.end : range2.end
+        return [range1] if range1.end <= range2.begin || range1.begin >= range2.end
 
-        [larger_start..smaller_end, smaller_end..larger_end]
+        intersect_start = [range1.begin, range2.begin].max
+        intersect_end = [range1.end, range2.end].min
+
+        segments = []
+        segments << (range1.begin...intersect_start) if range1.begin < intersect_start
+        segments << (intersect_start...intersect_end) if intersect_start < intersect_end
+        segments << (intersect_end...range1.end) if intersect_end < range1.end
+
+        if segments.length == 0
+          raise "no segments found for #{range1} and #{range2}"
+        end
+        segments
       end
 
       # Processes each line of the input file and stores the result in the dataset
@@ -70,21 +77,29 @@ module Year2023
       end
 
       def process_range(current_range, mode_maps, current_mode)
-        if current_mode == 6
-          current_range.min
+        if current_mode == 7
+          return current_range.min
         end
-        node_maps[current_mode].each do |range, value|
-          case fully_encompass(current_range, range)
+        mode_maps[current_mode].each do |range, value|
+          case fully_encompass(range, current_range)
           when :full
-            current_range = range
+            puts "current range: #{current_range}, range: #{range}"
+            current_range = (current_range.begin + range.begin)...(current_range.end + range.end)
             return process_range(current_range, mode_maps, current_mode + 1)
           when :partial
             ranges = split_range(current_range, range)
-            return ranges.map { |r| process_range(r, mode_maps, current_mode + 1) }.min
+            puts "partial match on range #{current_range} (#{range}), split into #{ranges}"
+            return ranges.map { |r| process_range(r, mode_maps, current_mode) }.min
           when :none
-            continue
+            next
           end
         end
+
+        if current_range.nil?
+          raise "no range found for #{current_range} and #{mode_maps[current_mode]}"
+        end
+        puts "got to end result: #{current_range}, min: #{current_range.min}"
+        return current_range.min
       end
 
       # Processes the dataset as a whole
