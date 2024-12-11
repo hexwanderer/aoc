@@ -15,8 +15,7 @@ module Year2023
     end
 
     def part_1
-      lines = @input.lines.map(&:chomp)
-      seeds, mode_maps = process_dataset(lines)
+      seeds, mode_maps = data[0], data[1]
 
       seeds.map do |seed|
         process_seed(seed, mode_maps)
@@ -24,13 +23,11 @@ module Year2023
     end
 
     def part_2
-      lines = @input.lines.map(&:chomp)
-      seeds, mode_maps = process_dataset(lines)
-      r = seeds.each_slice(2).map do |left, right|
+      seeds, mode_maps = data[0], data[1]
+
+      seeds.each_slice(2).map do |left, right|
         process_range(left...left+right, mode_maps, 0)
-      end
-      puts "result: #{r}"
-      r.min
+      end.min
     end
 
     private
@@ -83,12 +80,10 @@ module Year2023
         mode_maps[current_mode].each do |range, value|
           case fully_encompass(range, current_range)
           when :full
-            puts "current range: #{current_range}, range: #{range}"
-            current_range = (current_range.begin + range.begin)...(current_range.end + range.end)
+            current_range = (current_range.begin + value)...(current_range.end + value)
             return process_range(current_range, mode_maps, current_mode + 1)
           when :partial
             ranges = split_range(current_range, range)
-            puts "partial match on range #{current_range} (#{range}), split into #{ranges}"
             return ranges.map { |r| process_range(r, mode_maps, current_mode) }.min
           when :none
             next
@@ -98,16 +93,15 @@ module Year2023
         if current_range.nil?
           raise "no range found for #{current_range} and #{mode_maps[current_mode]}"
         end
-        puts "got to end result: #{current_range}, min: #{current_range.min}"
-        return current_range.min
+        return process_range(current_range, mode_maps, current_mode + 1)
       end
 
       # Processes the dataset as a whole
-      def process_dataset(lines)
+      def process_dataset(data)
         mode = nil
         seeds = []
         mode_maps = {}
-        lines.map do |line|
+        data.map do |line|
           case line
           when /^seeds:/
             seeds.concat(line.split(":")[1].strip.split(" ").map(&:to_i))
